@@ -1,11 +1,13 @@
 package HTTP::Server::Simple::Er;
-$VERSION = v0.0.1;
+$VERSION = v0.0.2;
 
 use warnings;
 use strict;
 use Carp;
 
 use HTTP::Headers ();
+use HTTP::Date ();
+use HTTP::Status ();
 
 =head1 NAME
 

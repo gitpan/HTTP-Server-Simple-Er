@@ -1,6 +1,6 @@
 ---
 name: HTTP-Server-Simple-Er
-version: v0.0.1
+version: v0.0.2
 author:
   - 'Eric Wilhelm @ <ewilhelm at cpan dot org>'
 abstract: lightweight server and interface
@@ -19,7 +19,7 @@ build_requires:
 provides:
   HTTP::Server::Simple::Er:
     file: lib/HTTP/Server/Simple/Er.pm
-    version: v0.0.1
+    version: v0.0.2
 generated_by: Module::Build version 0.280801
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

@@ -1,5 +1,9 @@
 Revision history for HTTP-Server-Simple-Er
 
+v0.0.2 2008-05-24
+
+  * silly "perhaps you forgot to use ..." bugs
+
 v0.0.1 2008-05-23
 
   * first public release

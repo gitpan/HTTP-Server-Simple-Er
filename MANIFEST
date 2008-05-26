@@ -7,3 +7,5 @@ META.yml
 README
 t/00-load.t
 t/basic.t
+t/interrupt.pl
+t/interrupt.t

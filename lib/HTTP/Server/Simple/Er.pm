@@ -1,5 +1,5 @@
 package HTTP::Server::Simple::Er;
-$VERSION = v0.0.2;
+$VERSION = v0.0.3;
 
 use warnings;
 use strict;
@@ -44,6 +44,7 @@ rw @PROPS;
 ri 'port';
 ri 'req_handler';
 ro 'headers';
+ri 'child_pid';
 no  Class::Accessor::Classy;
 
 # ick, make our accessors overwrite those
@@ -140,42 +141,46 @@ sub headers {
 sub child_server {
   my $self = shift;
 
-  local $SIG{INT} = sub { warn "INT:$$"; exit };
   my $parent = $$;
   my $win_event;
   my $child;
   my $cb;
+  my $kill_child;
   if($^O eq 'MSWin32') {
     require Win32::Event;
     $win_event = Win32::Event->new();
-    eval(q(END {
-      $child or return;
-      kill 9, $child;
-      sleep 1;
-      sleep 1 while kill 0, $child;
-    }));
+    $kill_child = sub { kill 9, $child; sleep 1 while kill 0, $child; };
     $cb = sub {$win_event->pulse};
   }
   else {
-    eval(q(END {
-      $child or return;
-      kill 'USR1', $child;
-    }));
-    $cb = sub {kill 'USR1', $parent};
+    $kill_child = sub { kill INT => $child; };
+    $cb = sub {kill USR1 => $parent};
   }
   $self->set_listener_cb($cb);
 
   my $child_loaded = 0;
   local %SIG;
   if(not $^O eq 'MSWin32') {
-    $SIG{'USR1'} = sub {
-      $child_loaded = 1;
-      exit unless $parent == $$;
-    };
+    $SIG{USR1} = sub { $child_loaded = 1; };
   }
+
+  local *print_banner = sub {}; # silence this thing
+
+  $self->set_port(8080) unless($self->port);
   $child = $self->background;
   $child =~ /^-?\d+$/ or
     croak("background() didn't return a valid pid");
+  $self->set_child_pid($child);
+
+  # hooks to handle our zombies:
+  $SIG{INT} = sub { # TODO should really be stacked handlers?
+    warn "interrupt";
+    $kill_child->();
+    # rethrow:  INT *shouldn't* run END blocks => exit/die is wrong
+    $SIG{INT} = 'DEFAULT'; kill INT => $$;
+  };
+  eval(q(END {&$kill_child}));
+
   if($win_event) {
     $win_event->wait;
   }

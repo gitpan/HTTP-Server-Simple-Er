@@ -6,7 +6,7 @@ use strict;
 $| = 1;
 
 use HTTP::Server::Simple::Er;
-my $server = HTTP::Server::Simple::Er->new(port => 8089);
+my $server = HTTP::Server::Simple::Er->new(port => 7779);
 
 print "me: ", $$, "\n";
 $SIG{__WARN__} = sub {print "warning: ", @_};

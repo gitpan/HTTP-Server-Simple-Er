@@ -9,8 +9,9 @@ my $builder = $build_class->new(
   license             => 'perl',
   dist_version_from   => 'lib/HTTP/Server/Simple/Er.pm',
   requires => {
-    'HTTP::Server::Simple' => 0.27,
+    'HTTP::Server::Simple'    => 0.27,
     'Class::Accessor::Classy' => 'v0.9.0',
+    'URI::Escape'             => 0,
   },
   build_requires => {
     'Module::Build' => 0.26,
@@ -26,7 +27,7 @@ my $builder = $build_class->new(
         'http://rt.cpan.org/NoAuth/Bugs.html?Dist=HTTP-Server-Simple-Er',
       #MailingList => 'mailto:...',
       repository =>
-        'http://scratchcomputing.com/svn/HTTP-Server-Simple-Er/trunk',
+        'http://svn.scratchcomputing.com/HTTP-Server-Simple-Er/trunk',
     }
   },
 );

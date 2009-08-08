@@ -1,5 +1,5 @@
 package HTTP::Server::Simple::Er;
-$VERSION = v0.0.3;
+$VERSION = v0.0.4;
 
 use warnings;
 use strict;
@@ -8,6 +8,8 @@ use Carp;
 use HTTP::Headers ();
 use HTTP::Date ();
 use HTTP::Status ();
+
+use URI::Escape ();
 
 =head1 NAME
 
@@ -134,6 +136,8 @@ sub headers {
 
 =head2 child_server
 
+Starts the server as a child process.
+
   my $url = $server->child_server;
 
 =cut
@@ -185,6 +189,7 @@ sub child_server {
     $win_event->wait;
   }
   else {
+    local $SIG{CHLD} = sub { croak "child died"; };
     1 while(not $child_loaded);
   }
   return("http://localhost:" . $self->port);
@@ -234,12 +239,12 @@ sub output {
   # allow leading code and/or leading params ref
   my $code = ($args[0] =~ m/^RC_|^\d\d\d$/) ? shift(@args) : undef;
   my %p;
-  if(ref($args[0])) {
+  if((ref($args[0])||'') eq 'HASH') {
     %p = %{shift(@args)};
     ($code and $p{status}) and die "cannot have status twice"
   }
   # let subclasses pass a trailing hashref
-  if(ref($args[-1])) {
+  if(((ref($args[-1]))||'') eq 'HASH') {
     my $also = pop(@args);
     my @k = keys(%$also);
     @p{@k} = @$also{@k};
@@ -267,6 +272,56 @@ sub output {
   print $data;
 } # end subroutine output definition
 ########################################################################
+
+=head2 params
+
+Return a hash of parameters parsed from $self->query_string;
+
+  my %params = $server->params;
+
+=cut
+
+sub params {
+  my $self = shift;
+
+  my $s = $self->query_string;
+  # XXX check for correctness
+  return map({URI::Escape::uri_unescape($_)}
+    map({split(/=/, $_, 2)} split(/&/, $s)));
+} # params #############################################################
+
+=head2 form_data
+
+Retrieve POSTed form data.  If an element is mentioned twice, its value
+automatically becomes an arrayref.
+
+  my %form = $server->form_data;
+
+=cut
+
+sub form_data {
+  my $self = shift;
+
+  my $h = $self->headers;
+  my $s;
+  my $fh = $self->stdio_handle;
+  read($fh, $s, $h->{'content-length'});
+
+  # XXX check for correctness
+  my %d;
+  foreach my $pair (split(/&/, $s)) {
+    my ($k,$v) = map({$_ = URI::Escape::uri_unescape($_); s/\+/ /g; $_}
+      split(/=/, $pair, 2));
+    if($d{$k}) {
+      $d{$k} = [$d{$k}] unless(ref $d{$k});
+      push(@{$d{$k}}, $v);
+    }
+    else {
+      $d{$k} = $v;
+    }
+  }
+  return(%d);
+} # form_data ##########################################################
 
 =head1 AUTHOR
 

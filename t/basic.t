@@ -6,7 +6,7 @@ use strict;
 use Test::More qw(no_plan);
 
 use HTTP::Server::Simple::Er;
-my $port = 8090;
+my $port = 7779;
 my $s = HTTP::Server::Simple::Er->new(port => $port,
   req_handler => sub {
     my $self = shift;
@@ -26,6 +26,9 @@ my $s = HTTP::Server::Simple::Er->new(port => $port,
       }
       elsif($path eq '/foo') {
         $self->output({content_type => 'text/plain'}, 'blah blah blah');
+      }
+      elsif($path eq '/echo') {
+        $self->output({content_type => 'text/plain'}, `echo foo`);
       }
       else {
         $self->output(RC_NOT_FOUND => '<html>Sorry dude</html>');
@@ -53,6 +56,12 @@ my $agent = LWP::UserAgent->new;
   ok($ans->is_success, 'success') or die "Get failed: " . $ans->message;
   is($ans->content_type, 'text/plain');
   is($ans->content, 'blah blah blah');
+}
+if($^O eq 'linux') {
+  my $ans = $agent->get($surl . '/echo');
+  ok($ans->is_success, 'success') or die "Get failed: " . $ans->message;
+  is($ans->content_type, 'text/plain');
+  is($ans->content, "foo\n");
 }
 {
   my $ans = $agent->get($surl . '/bar');
